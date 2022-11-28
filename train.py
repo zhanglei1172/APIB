@@ -349,7 +349,7 @@ if __name__ == '__main__':
 
     if args.eval:  # just run eval
         print('=> Start evaluation...')
-        test(0, test_loader, save=False)
+        test(0, val_loader, save=False)
     else:  # train
         print('=> Start training...')
         print('Training {} on {}...'.format(args.model, args.dataset))
@@ -361,7 +361,7 @@ if __name__ == '__main__':
         for epoch in range(start_epoch, start_epoch + args.n_epoch):
             lr = adjust_learning_rate(optimizer, epoch)
             train(epoch, train_loader)
-            test(epoch, test_loader)
+            test(epoch, val_loader)
 
         writer.close()
         print('=> Model Parameter: {:.3f} M, FLOPs: {:.3f}M, best top-1 acc: {}%'.format(n_params / 1e6,

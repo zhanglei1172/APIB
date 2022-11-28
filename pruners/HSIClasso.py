@@ -45,6 +45,8 @@ def HSIC_lasso_pruning(X, Y, W, alpha=1e-6, threshold=1,debug=False):
     # Y shape: [B, c_out]
     # W shape: [c_out, c_in]
     ##求HSIC X(B,c_in,h*w)  Y(B,c_out*h*w)
+    X = X.astype(np.float64)
+    Y = Y.astype(np.float64)
         
     b, c, l = X.shape
 
