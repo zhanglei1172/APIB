@@ -16,18 +16,18 @@ def centering(K):
     if len(K.shape)==3:
         d = K.shape[0]
         n = K.shape[1]
-        I = np.tile(np.eye(n), (d, 1, 1))
+        I = np.tile(np.eye(n,dtype=np.float32), (d, 1, 1))
         # I=torch.randn((d,n,n))
         # I[:]=torch.eye(n)
         # unit = np.full((d,n,n), 1/n)
-        H = I - np.full((d,n,n), 1/n) #unit / n
+        H = I - np.full((d,n,n), 1/n, dtype=np.float32) #unit / n
         return H@K@H
     else :
         n=K.shape[0]
-        I = np.eye(n)
+        I = np.eye(n,dtype=np.float32)
         # I=torch.eye(n)
         # unit=torch.ones((n,n))
-        H = I - np.full((n,n), 1/n)#unit / n
+        H = I - np.full((n,n), 1/n,dtype=np.float32 )#unit / n
         return H@K@H
 
 def HSIC_lasso_pruning(X, Y, W, alpha=1e-6, threshold=1,debug=False):
@@ -45,8 +45,8 @@ def HSIC_lasso_pruning(X, Y, W, alpha=1e-6, threshold=1,debug=False):
     # Y shape: [B, c_out]
     # W shape: [c_out, c_in]
     ##求HSIC X(B,c_in,h*w)  Y(B,c_out*h*w)
-    X = X.astype(np.float64)
-    Y = Y.astype(np.float64)
+    # X = X.astype(np.float64)
+    # Y = Y.astype(np.float64)
         
     b, c, l = X.shape
 
