@@ -30,6 +30,77 @@ def centering(K):
         H = I - np.full((n,n), 1/n,dtype=np.float32 )#unit / n
         return H@K@H
 
+def kernel_Gaussian(b, X):
+    if len(X.shape) == 3:
+        X=X.transpose(1,0,2)  #(c_in,B,h*w)
+        K=None
+        # X=torch.from_numpy(X)        
+        #K=X.matmul(torch.from_numpy(X.numpy().transpose(0,2,1)))#linear kernel
+        G = X@X.transpose(0,2,1)
+        H = np.tile(np.diagonal(G, axis1=1,axis2=2)[:,None,:], (1,b, 1))
+        gamma = 1.0 / X.shape[-1]
+        K = np.exp((H + H.transpose(0,2,1) -2*G)*(-gamma))
+        return K
+    else:
+        Y = X
+        # Y=torch.from_numpy(Y)
+        G = Y@Y.T
+        H = np.tile(np.diagonal(G), (b, 1))
+        gamma = 1.0 / Y.shape[-1]
+        L = np.exp((H + H.T -2*G)*(-gamma))  
+        return L
+    
+
+def kernel_Linear(b, X):
+    if len(X.shape) == 3:
+        X=X.transpose(1,0,2)  #(c_in,B,h*w)
+        K=None
+        # X=torch.from_numpy(X)        
+        # K=X.matmul(torch.from_numpy(X.numpy().transpose(0,2,1)))#linear kernel
+        G = X@X.transpose(0,2,1)
+        return G
+    else:
+        Y = X
+        # Y=torch.from_numpy(Y)
+        G = Y@Y.T
+        return G
+    
+def kernel_Sigmoid(b, X):
+    if len(X.shape) == 3:
+        X=X.transpose(1,0,2)  #(c_in,B,h*w)
+        K=None
+        # X=torch.from_numpy(X)        
+        # K=X.matmul(torch.from_numpy(X.numpy().transpose(0,2,1)))#linear kernel
+        G = np.tanh(X@X.transpose(0,2,1))
+        return G
+    else:
+        Y = X
+        # Y=torch.from_numpy(Y)
+        G = np.tanh(Y@Y.T)
+        return G
+    
+def kernel_Laplace(b, X):
+    if len(X.shape) == 3:
+        X=X.transpose(1,0,2)  #(c_in,B,h*w)
+        K=None
+        # X=torch.from_numpy(X)        
+        #K=X.matmul(torch.from_numpy(X.numpy().transpose(0,2,1)))#linear kernel
+        G = X@X.transpose(0,2,1)
+        H = np.tile(np.diagonal(G, axis1=1,axis2=2)[:,None,:], (1,b, 1))
+        gamma = (0.5 / X.shape[-1])**0.5
+        K = np.exp(np.sqrt(np.clip(H + H.transpose(0,2,1) -2*G, 0, None))*(-gamma))
+        return K
+    else:
+        Y = X
+        # Y=torch.from_numpy(Y)
+        G = Y@Y.T
+        H = np.tile(np.diagonal(G), (b, 1))
+        gamma = (0.5 / Y.shape[-1])**0.5
+        L = np.exp(np.sqrt(H + H.T -2*G)*(-gamma))  
+        return L
+    
+
+
 def HSIC_lasso_pruning(X, Y, W, alpha=1e-6, threshold=1,debug=False):
     
     # Conv
@@ -50,14 +121,7 @@ def HSIC_lasso_pruning(X, Y, W, alpha=1e-6, threshold=1,debug=False):
         
     b, c, l = X.shape
 
-    X=X.transpose(1,0,2)  #(c_in,B,h*w)
-    K=None
-    # X=torch.from_numpy(X)        
-    #K=X.matmul(torch.from_numpy(X.numpy().transpose(0,2,1)))#linear kernel
-    G = X@X.transpose(0,2,1)
-    H = np.tile(np.diagonal(G, axis1=1,axis2=2)[:,None,:], (1,b, 1))
-    gamma = 1.0 / X.shape[-1]
-    K = np.exp((H + H.transpose(0,2,1) -2*G)*(-gamma))
+    K = kernel_Gaussian(b, X)
     # tmp = X.unsqueeze(2) - X.unsqueeze(1) # (c_in, B,B, h*w)
     # K = torch.exp(- (tmp ** 2).sum(dim=-1) * gamma) #(c_in,N,N)
     
@@ -69,17 +133,13 @@ def HSIC_lasso_pruning(X, Y, W, alpha=1e-6, threshold=1,debug=False):
     
         
     Y=Y-Y.mean(0)
-    # Y=torch.from_numpy(Y)
-    G = Y@Y.T
-    H = np.tile(np.diagonal(G), (b, 1))
-    gamma = 1.0 / Y.shape[-1]
-    L = np.exp((H + H.T -2*G)*(-gamma))  
+
     
     #L=Y.matmul(Y.transpose(1,0))
     # tmp=Y.unsqueeze(1) - Y.unsqueeze(0)
     # gamma = 1.0 / Y.shape[-1]
     # L = torch.exp(- (tmp ** 2).sum(dim=-1) * gamma)
-    
+    L = kernel_Gaussian(b, Y)
     L_ba=centering(L)
     L_ba=L_ba.reshape(-1)#.numpy()#N*N
 
